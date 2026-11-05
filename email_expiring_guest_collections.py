@@ -197,7 +197,9 @@ mapped_collections = dict()
 if args.collection.int != 0:
 	mapped_collections[args.collection] = globus_gcs.get_collection(args.collection)
 else:
-	collection_list = globus_gcs.get_collection_list(filter='mapped_collections')
+	collection_list = globus_gcs.paginated.get_collection_list(
+		filter='mapped_collections',
+	).items()
 	for collection in collection_list:
 		mapped_collections[uuid.UUID(collection['id'])] = collection
 print(f"Will examine {len(mapped_collections)} Mapped Collections")
@@ -206,13 +208,13 @@ print(f"Will examine {len(mapped_collections)} Mapped Collections")
 guest_collections = list()
 owner_ids: set[uuid.UUID] = set()
 for mapped_collection in mapped_collections.values():
-	collection_list = globus_gcs.get_collection_list(
+	collection_list = globus_gcs.paginated.get_collection_list(
 		filter=(
 			'guest_collections',
 			f"last_access <= {cutoff_date}",
 		),
 		mapped_collection_id=mapped_collection['id'],
-	)
+	).items()
 	for collection in collection_list:
 		guest_collections.append(collection)
 		owner_ids.add(collection['identity_id'])
