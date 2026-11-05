@@ -19,6 +19,17 @@ This script identifies which Guest Collections would be deleted
 immediately, and drafts deletion-warning emails.  Actually sending the emails
 is left as an exercise for the user.
 
+In addition, a script—`guest_collection_histogram.py`—is provided to give you
+an understanding of how long it's been since your Guest Collections have been
+accessed.
+
+![A bar chart of Guest Collection last accesses](histogram.png)
+
+*The above chart shows 179 Guest Collections, for an Endpoint which started
+tracking last access 40 months ago.  Most Guest Collections were last
+accessed sometime within the past year, but many have not been accessed at all
+since the Endpoint started tracking last access.*
+
 # Requirements
 
 Python 3.11 or later.
@@ -41,11 +52,30 @@ at least Activity Monitor access.
 If you will provide your own Globus Native App Client ID, put it in the
 `EEGC_CLIENT_ID` environment variable.
 
-To run with `uv run`:
+To generate a histogram of Guest Collection activity, run the script
+`guest_collection_histogram.py`.  For example, with `uv run`:
+
+```
+uv run guest_collection_histogram.py ENDPOINT_UUID [COLLECTION_UUID]
+```
+
+To generate the emails, run the script `email_expiring_guest_collections.py`.
+For example, with `uv run`:
 
 ```
 uv run email_expiring_guest_collections.py --cutoff-days 379 templates outputs ENDPOINT_UUID [COLLECTION_UUID]
 ```
+
+`ENDPOINT_UUID` is the UUID of the Endpoint to examine.  This is required, even
+if you only want to send emails for a single Mapped Collection.
+
+`COLLECTION_UUID` is an optional UUID of a Collection.  If provided, this is
+the only Collection that will be examined, and you only need a Role on this
+Collection.  If you do not provide this, then all Collections on the Endpoint
+will be examined, and you will need a Role on the Endpoint.
+
+`email_expiring_guest_collections.py` has three additional parameters.  Two are
+required; one is optional.
 
 `--cutoff-days` is the cutoff for generating emails.  Guest Collections
 accessed more than this many days ago will have an email generated.  This is an
@@ -58,19 +88,13 @@ following section.
 `outputs` is the path to an empty directory.  Emails to send are written here.
 This is explained in a following section.
 
-`ENDPOINT_UUID` is the UUID of the Endpoint to examine.  This is required, even
-if you only want to send emails for a single Mapped Collection.
-
-`COLLECTION_UUID` is an optional UUID of a Collection.  If provided, this is
-the only Collection that will be examined, and you only need a Role on this
-Collection.  If you do not provide this, then all Collections on the Endpoint
-will be examined, and you will need a Role on the Endpoint.
 
 # Templates
 
-The script uses [Jinja](https://jinja.palletsprojects.com/en/stable/) templates
-to generate the subject line and body for each email.  When you run the script,
-you provide the path to the templates directory.
+The `email_expiring_guest_collections.py` script uses
+[Jinja](https://jinja.palletsprojects.com/en/stable/) templates to generate the
+subject line and body for each email.  When you run the script, you provide the
+path to the templates directory.
 
 Two templates are used:
 
@@ -112,8 +136,13 @@ When processed, each template is given four variables:
 
 # Outputs
 
-When the program is run, the outputs directory must be empty.  Even a macOS
-`.DS_Store` file will mean that it is not empty.
+`guest_collection_histogram.py` writes its output to standard output; it is up
+to you to redirect the output to a file.  The output is CSV: One column is a
+number of months (starting from zero), and one column is a number of Guest
+Collections.  From this, you can make a bar chart.
+
+When `email_expiring_guest_collections.py` is run, the outputs directory must
+be empty.  Even a macOS `.DS_Store` file will mean that it is not empty.
 
 For every Guest Collection that needs an email sent, three files will be
 written in the outputs directory.  The three files will share a common prefix:
