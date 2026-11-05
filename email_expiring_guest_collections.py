@@ -177,7 +177,7 @@ if globus_endpoint['entity_type'] != 'GCSv5_endpoint':
 if args.collection.int != 0:
 	globus_collection = globus_transfer.get_endpoint(args.collection)
 	if globus_collection['entity_type'] != 'GCSv5_mapped_collection':
-		print(f"UUID {args.endpoint} does not refer to a GCS Mapped Collection!")
+		print(f"UUID {args.collection} does not refer to a GCS Mapped Collection!")
 		sys.exit(1)
 
 # Now time for our Endpoint client, and get our Endpoint's earliest # last-accessed
