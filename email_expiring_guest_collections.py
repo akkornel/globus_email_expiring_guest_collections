@@ -179,6 +179,9 @@ if args.collection.int != 0:
 	if globus_collection['entity_type'] != 'GCSv5_mapped_collection':
 		print(f"UUID {args.collection} does not refer to a GCS Mapped Collection!")
 		sys.exit(1)
+	if uuid.UUID(globus_collection['non_functional_endpoint_id']) != args.endpoint:
+		print(f"Collection {args.collection} is not on Endpoint {args.endpoint}!")
+		sys.exit(1)
 
 # Now time for our Endpoint client, and get our Endpoint's earliest # last-accessed
 globus_gcs = globus_sdk.GCSClient(globus_endpoint['gcs_manager_url'],
