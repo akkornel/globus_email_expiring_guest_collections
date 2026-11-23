@@ -65,11 +65,44 @@ import uuid
 
 # Next, do third-party imports
 import globus_sdk
+import globus_sdk.login_flows
 
 
 # A helper to print status messages to stderr, keeping stdout for the CSV
 def status(message: str) -> None:
 	print(message, file=sys.stderr)
+
+
+# A login flow manager that prompts on stderr, keeping stdout for the CSV.
+# The stock CommandLineLoginFlowManager uses print() and input(), both of which
+# write to stdout.
+class StderrLoginFlowManager(globus_sdk.login_flows.CommandLineLoginFlowManager):
+	def print_authorize_url(self, authorize_url: str) -> None:
+		login_prompt = 'Please authenticate with Globus here:'
+		status('')
+		status(login_prompt)
+		status('-' * len(login_prompt))
+		status(authorize_url)
+		status('-' * len(login_prompt))
+		status('')
+
+	def prompt_for_code(self) -> str:
+		print('Enter the resulting Authorization Code here: ',
+			end='',
+			file=sys.stderr,
+			flush=True,
+		)
+		try:
+			return input().strip()
+		except EOFError as e:
+			raise globus_sdk.login_flows.CommandLineLoginFlowEOFError(
+				'An EOF was read when an authorization code was expected.'
+				' (Are you running this in an interactive terminal?)'
+			) from e
+		except KeyboardInterrupt:
+			# The user pressed Control-C, so end the prompt line and exit quietly
+			status('')
+			sys.exit(0)
 
 
 # Calculate the number of whole months between two dates
@@ -106,6 +139,9 @@ else:
 # Make our Globus App, add Endpoint scopes, and get a Transfer client
 globus = globus_sdk.UserApp('guest_collection_histogram',
 	client_id=GLOBUS_CLIENT_ID,
+	config=globus_sdk.GlobusAppConfig(
+		login_flow_manager=StderrLoginFlowManager,
+	),
 )
 globus_transfer = globus_sdk.TransferClient(app=globus)
 endpoint_scopes = globus_sdk.GCSClient.get_gcs_endpoint_scopes(args.endpoint)
